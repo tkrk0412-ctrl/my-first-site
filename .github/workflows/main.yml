@@ -1,0 +1,24 @@
+name: RSI Monitor Bot
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # 1時間に1回実行（UTC基準）
+  workflow_dispatch:      # 手動実行ボタンを有効化
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy yfinance
+      - name: Run script
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          PAIR: ${{ secrets.PAIR }}
+        run: python rsi_monitor.py
