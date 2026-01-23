@@ -3,28 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RSI Trading Board</title>
+    <title>Trading Monitor</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>EUR/JPY 監視ボード</h1>
-        <div class="price-box">
-            <p>現在価格: <span class="price-val">185.937</span></p>
-            <p class="update-time">最終更新: 2026-01-24 00:52:50 JST</p>
+        <h1>Market Monitor</h1>
+        <p class="update-time">最終更新: 2026-01-24 00:57:13 JST</p>
+        
+        <div class="card">
+            <h2>EURJPY</h2>
+            <p class="price-val">185.886</p>
+            <p class="rsi-val">RSI: 50.96 📉</p>
+            <p class="signal-none">💎 待機</p>
+            <p style="font-size:0.7em; color:#666;">前回のRSI: 51.09</p>
         </div>
         
         <div class="card">
-            <h2>1時間足 (H1)</h2>
-            <p class="rsi-val">RSI: 52.46</p>
-            <p class="signal-none">💎 待機 (レンジ内)</p>
+            <h2>USDJPY</h2>
+            <p class="price-val">158.110</p>
+            <p class="rsi-val">RSI: 41.69 📉</p>
+            <p class="signal-none">💎 待機</p>
+            <p style="font-size:0.7em; color:#666;">前回のRSI: 45.54</p>
         </div>
-
+        
         <div class="card">
-            <h2>4時間足 (H4)</h2>
-            <p class="rsi-val">RSI: 62.08</p>
-            <p class="signal-none">💎 待機 (レンジ内)</p>
+            <h2>BTC-JPY</h2>
+            <p class="price-val">14152809.000</p>
+            <p class="rsi-val">RSI: 50.25 📈</p>
+            <p class="signal-none">💎 待機</p>
+            <p style="font-size:0.7em; color:#666;">前回のRSI: 42.02</p>
         </div>
+        
     </div>
 </body>
 </html>
