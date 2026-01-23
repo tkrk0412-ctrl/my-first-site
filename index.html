@@ -1,15 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>RSI Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSI Trading Board</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>EUR/JPY RSI 監視ボード</h1>
-    <p>現在の価格: <strong>185.886</strong></p>
-    <p>H1 RSI: 50.97</p>
-    <p>H4 RSI: 61.40</p>
-    <p>最終更新: 2026-01-23 23:56:20 JST</p>
+    <div class="container">
+        <h1>EUR/JPY 監視ボード</h1>
+        <div class="price-box">
+            <p>現在価格: <span class="price-val">185.926</span></p>
+            <p class="update-time">最終更新: 2026-01-24 00:50:09 JST</p>
+        </div>
+        
+        <div class="card">
+            <h2>1時間足 (H1)</h2>
+            <p class="rsi-val">RSI: 52.14</p>
+            <p class="signal-none">💎 待機 (レンジ内)</p>
+        </div>
+
+        <div class="card">
+            <h2>4時間足 (H4)</h2>
+            <p class="rsi-val">RSI: 61.94</p>
+            <p class="signal-none">💎 待機 (レンジ内)</p>
+        </div>
+    </div>
 </body>
 </html>
