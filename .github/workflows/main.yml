@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'  # ここを3.9から3.10に上げました
       - name: Install dependencies
         run: pip install pandas numpy yfinance
       - name: Run script
