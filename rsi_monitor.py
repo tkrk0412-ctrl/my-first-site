@@ -3,79 +3,79 @@ import os
 import pandas as pd
 import yfinance as yf
 import json
-import requests
 from datetime import datetime, timezone, timedelta
 
-PAIRS = ["EURJPY=X", "USDJPY=X", "BTC-JPY"]
+SYMBOL = "EURJPY=X"
+TIMEFRAMES = [("M15", "15m", "5d"), ("H1", "60m", "30d"), ("H4", "4h", "90d")]
 JST = timezone(timedelta(hours=9))
-NTFY_TOPIC = os.environ.get("NTFY_TOPIC")
 
-def get_divergence(df, rsi_series):
-    # 直近5時間の動きで簡易判定
-    price_recent = df["Close"].tail(5)
-    rsi_recent = rsi_series.tail(5)
-    
-    # 強気のダイバージェンス（価格は下落、RSIは上昇）
-    if price_recent.iloc[-1] < price_recent.iloc[0] and rsi_recent.iloc[-1] > rsi_recent.iloc[0]:
-        if rsi_recent.iloc[-1] < 40: return "📈 強気ダイバージェンス発生中"
-    
-    # 弱気のダイバージェンス（価格は上昇、RSIは下落）
-    if price_recent.iloc[-1] > price_recent.iloc[0] and rsi_recent.iloc[-1] < rsi_recent.iloc[0]:
-        if rsi_recent.iloc[-1] > 60: return "📉 弱気ダイバージェンス発生中"
-    
-    return None
+def calculate_indicators(df):
+    close = df["Close"]
+    delta = close.diff()
+    gain = delta.clip(lower=0.0).ewm(alpha=1/14, adjust=False).mean()
+    loss = (-delta).clip(lower=0.0).ewm(alpha=1/14, adjust=False).mean()
+    df["RSI"] = 100 - (100 / (1 + (gain / loss.replace(0, 1e-9))))
+    df["MA20"] = close.rolling(window=20).mean()
+    df["STD"] = close.rolling(window=20).std()
+    df["Upper"] = df["MA20"] + (df["STD"] * 2)
+    df["Lower"] = df["MA20"] - (df["STD"] * 2)
+    return df
 
-def send_ntfy(message):
-    if NTFY_TOPIC:
-        requests.post(f"https://ntfy.sh/{NTFY_TOPIC}", 
-                      data=message.encode('utf-8'),
-                      headers={"Title": "FX Alert", "Priority": "high"})
-
-def rsi(series, period=14):
-    delta = series.diff()
-    gain = delta.clip(lower=0.0).ewm(alpha=1/period, adjust=False).mean()
-    loss = (-delta).clip(lower=0.0).ewm(alpha=1/period, adjust=False).mean()
-    rs = gain / loss.replace(0, 1e-9)
-    return 100 - (100 / (1 + rs))
+def get_entry_signal(row):
+    p, r, l, u = row["Close"], row["RSI"], row["Lower"], row["Upper"]
+    if r <= 30 and p <= l: return "🔥 鉄板買い (BB下抜+RSI)", "signal-buy"
+    if r >= 70 and p >= u: return "🌋 鉄板売り (BB上抜+RSI)", "signal-sell"
+    if r <= 35: return "🚀 買い検討", "signal-buy-soft"
+    if r >= 65: return "🔥 売り検討", "signal-sell-soft"
+    return "💎 待機", "signal-none"
 
 def main():
     now = datetime.now(tz=JST).strftime("%Y-%m-%d %H:%M:%S JST")
-    html_cards = ""
-    chart_data_js = ""
-
-    for symbol in PAIRS:
-        df = yf.download(symbol, interval="60m", period="60d", progress=False)
+    html_cards, chart_js = "", ""
+    for label, interval, period in TIMEFRAMES:
+        df = yf.download(SYMBOL, interval=interval, period=period, progress=False)
         df.columns = [c[0] if isinstance(c, tuple) else c for c in df.columns]
-        
-        rsi_series = rsi(df["Close"])
-        current_rsi = rsi_series.iloc[-1]
-        price = float(df["Close"].iloc[-1])
-        
-        # ダイバージェンス検知
-        div_msg = get_divergence(df, rsi_series)
-        
-        # 通知判定 (RSIが極端な値、またはダイバージェンス発生時)
-        if div_msg:
-            send_ntfy(f"{symbol}: {div_msg}\nPrice: {price:.3f}\nRSI: {current_rsi:.2f}")
-        elif current_rsi <= 30 or current_rsi >= 70:
-            send_ntfy(f"{symbol} RSI Alert: {current_rsi:.2f}\nPrice: {price:.3f}")
-
-        history_list = rsi_series.tail(24).tolist()
-        safe_name = symbol.replace('=X', '').replace('-', '')
-        chart_data_js += f"const data_{safe_name} = {json.dumps(history_list)};\n"
-
-        div_html = f'<p class="div-msg" style="color: #ffcc00; font-weight: bold;">{div_msg}</p>' if div_msg else ""
-        
+        df = calculate_indicators(df)
+        last = df.iloc[-1]
+        sig, s_class = get_entry_signal(last)
+        hist = df["RSI"].tail(24).tolist()
+        chart_js += f"const data_{label} = {json.dumps(hist)};\n"
         html_cards += f"""
         <div class="card">
-            <h2>{symbol.replace('=X', '')}</h2>
-            <p class="price-val">{price:.3f}</p>
-            <p class="rsi-val">RSI: {current_rsi:.2f}</p>
-            {div_html}
-            <div id="chart_{safe_name}" style="width: 100%; height: 100px;"></div>
-        </div>
-        """
+            <h2>EUR/JPY ({label})</h2>
+            <p class="price-val">{last['Close']:.3f}</p>
+            <p class="bb-info">Lower: {last['Lower']:.3f} / Upper: {last['Upper']:.3f}</p>
+            <p class="rsi-val">RSI: {last['RSI']:.2f}</p>
+            <p class="{s_class}">{sig}</p>
+            <div id="chart_{label}" style="width: 100%; height: 80px;"></div>
+        </div>"""
 
-    # (以下、HTML生成部分は前回と同様なので中略)
-    # ※ containerの中に div-msg のスタイルを追加するとより良いです。
+    with open("index.html", "w", encoding="utf-8") as f:
+        f.write(f"""<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EURJPY Master</title><link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
+      google.charts.load('current', {{packages: ['corechart']}});
+      google.charts.setOnLoadCallback(() => {{
+        { "".join([f"drawChart('{l}', data_{l});" for l, _, _ in TIMEFRAMES]) }
+      }});
+      {chart_js}
+      function drawChart(name, dRaw) {{
+        const data = new google.visualization.DataTable();
+        data.addColumn('number', 'T'); data.addColumn('number', 'RSI');
+        dRaw.forEach((v, i) => data.addRow([i, v]));
+        new google.visualization.LineChart(document.getElementById('chart_'+name)).draw(data, {{
+          backgroundColor: 'transparent', colors: ['#00ff88'], legend: 'none',
+          hAxis: {{textPosition: 'none', gridlines: {{color: 'transparent'}}}},
+          vAxis: {{textPosition: 'none', gridlines: {{color: '#333'}}, minValue: 0, maxValue: 100}},
+          chartArea: {{width: '100%', height: '80%'}}
+        }});
+      }}
+    </script>
+</head>
+<body><div class="container"><h1>EUR/JPY Master</h1><p class="update-time">{now}</p>{html_cards}</div></body></html>""")
 
+if __name__ == "__main__": main()
