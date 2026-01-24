@@ -1,11 +1,17 @@
-body { font-family: sans-serif; background-color: #121212; color: white; text-align: center; }
-.container { max-width: 500px; margin: auto; padding: 20px; }
-.price-box { background: #1e1e1e; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; }
-.price-val { font-size: 2em; color: #00ff88; font-weight: bold; }
-.update-time { font-size: 0.8em; color: #888; }
-.card { background: #252525; padding: 20px; margin: 10px 0; border-radius: 10px; border-left: 5px solid #444; }
-.rsi-val { font-size: 1.5em; margin: 5px 0; }
-.signal-buy { color: #ff4444; font-weight: bold; animation: blink 1s infinite alternate; }
-.signal-sell { color: #44aaff; font-weight: bold; animation: blink 1s infinite alternate; }
-.signal-none { color: #888; }
-@keyframes blink { from { opacity: 1; } to { opacity: 0.5; } }
+body { background: #000; color: #eee; font-family: sans-serif; margin: 0; padding: 15px; }
+.container { max-width: 480px; margin: auto; }
+header { text-align: center; margin-bottom: 20px; }
+h1 { font-size: 1.5em; color: #00ff88; margin-bottom: 5px; }
+.time { font-size: 0.8em; color: #888; }
+.card { background: #111; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.label { font-weight: bold; font-size: 1.1em; color: #aaa; }
+.price { font-size: 1.6em; font-weight: bold; color: #fff; }
+.indicators { display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 10px; }
+.chart-img { width: 100%; border-radius: 8px; }
+.signal-buy-strong { color: #ff4444; font-weight: bold; text-shadow: 0 0 5px #ff4444; }
+.signal-sell-strong { color: #44aaff; font-weight: bold; text-shadow: 0 0 5px #44aaff; }
+.signal-none { color: #666; }
+.alert-box { padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; margin-bottom: 15px; animation: blink 1s infinite; }
+.alert-box.buy { background: rgba(255,68,68,0.2); border: 1px solid #ff4444; color: #ff4444; }
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }

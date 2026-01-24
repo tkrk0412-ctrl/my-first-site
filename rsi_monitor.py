@@ -2,7 +2,7 @@
 import os
 import pandas as pd
 import yfinance as yf
-import json
+import matplotlib.pyplot as plt
 from datetime import datetime, timezone, timedelta
 
 SYMBOL = "EURJPY=X"
@@ -21,61 +21,83 @@ def calculate_indicators(df):
     df["Lower"] = df["MA20"] - (df["STD"] * 2)
     return df
 
-def get_entry_signal(row):
+def create_chart(df, label):
+    plt.figure(figsize=(6, 3), facecolor='#1a1a1a')
+    ax = plt.axes()
+    ax.set_facecolor('#1a1a1a')
+    
+    # 直近30件を表示
+    d = df.tail(30)
+    plt.plot(d.index, d['Close'], color='#00ff88', lw=2, label='Price')
+    plt.plot(d.index, d['Upper'], color='#ff4444', lw=1, ls='--', alpha=0.5)
+    plt.plot(d.index, d['Lower'], color='#44aaff', lw=1, ls='--', alpha=0.5)
+    plt.fill_between(d.index, d['Lower'], d['Upper'], color='#ffffff', alpha=0.05)
+    
+    plt.axis('off')
+    filename = f"chart_{label}.png"
+    plt.savefig(filename, bbox_inches='tight', pad_inches=0)
+    plt.close()
+    return filename
+
+def get_signal(row):
     p, r, l, u = row["Close"], row["RSI"], row["Lower"], row["Upper"]
-    if r <= 30 and p <= l: return "🔥 鉄板買い (BB下抜+RSI)", "signal-buy"
-    if r >= 70 and p >= u: return "🌋 鉄板売り (BB上抜+RSI)", "signal-sell"
-    if r <= 35: return "🚀 買い検討", "signal-buy-soft"
-    if r >= 65: return "🔥 売り検討", "signal-sell-soft"
-    return "💎 待機", "signal-none"
+    if r <= 30 and p <= l: return "激アツ買いチャンス", "signal-buy-strong"
+    if r >= 70 and p >= u: return "激アツ売りチャンス", "signal-sell-strong"
+    if r <= 35: return "買い狙い", "signal-buy"
+    if r >= 65: return "売り狙い", "signal-sell"
+    return "静観", "signal-none"
 
 def main():
-    now = datetime.now(tz=JST).strftime("%Y-%m-%d %H:%M:%S JST")
-    html_cards, chart_js = "", ""
+    now = datetime.now(tz=JST).strftime("%Y/%m/%d %H:%M")
+    html_cards = ""
+    signals = []
+
     for label, interval, period in TIMEFRAMES:
         df = yf.download(SYMBOL, interval=interval, period=period, progress=False)
         df.columns = [c[0] if isinstance(c, tuple) else c for c in df.columns]
         df = calculate_indicators(df)
         last = df.iloc[-1]
-        sig, s_class = get_entry_signal(last)
-        hist = df["RSI"].tail(24).tolist()
-        chart_js += f"const data_{label} = {json.dumps(hist)};\n"
+        
+        sig_text, sig_class = get_signal(last)
+        signals.append(sig_class)
+        chart_file = create_chart(df, label)
+        
         html_cards += f"""
         <div class="card">
-            <h2>EUR/JPY ({label})</h2>
-            <p class="price-val">{last['Close']:.3f}</p>
-            <p class="bb-info">Lower: {last['Lower']:.3f} / Upper: {last['Upper']:.3f}</p>
-            <p class="rsi-val">RSI: {last['RSI']:.2f}</p>
-            <p class="{s_class}">{sig}</p>
-            <div id="chart_{label}" style="width: 100%; height: 80px;"></div>
+            <div class="card-header">
+                <span class="label">{label}足</span>
+                <span class="price">{last['Close']:.3f}</span>
+            </div>
+            <div class="indicators">
+                <span>RSI: {last['RSI']:.1f}</span>
+                <span class="{sig_class}">{sig_text}</span>
+            </div>
+            <img src="{chart_file}?v={datetime.now().timestamp()}" class="chart-img">
         </div>"""
 
-    with open("index.html", "w", encoding="utf-8") as f:
+    # 全時間足で方向が一致した時のスペシャル表示
+    resonation = ""
+    if all("buy" in s for s in signals): resonation = '<div class="alert-box buy">🚨 全足一致：ロング推奨</div>'
+    if all("sell" in s for s in signals): resonation = '<div class="alert-box sell">🚨 全足一致：ショート推奨</div>'
+
+    with open("index.html", "w") as f:
         f.write(f"""<!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EURJPY Master</title><link rel="stylesheet" href="style.css">
-    <script src="https://www.gstatic.com/charts/loader.js"></script>
-    <script>
-      google.charts.load('current', {{packages: ['corechart']}});
-      google.charts.setOnLoadCallback(() => {{
-        { "".join([f"drawChart('{l}', data_{l});" for l, _, _ in TIMEFRAMES]) }
-      }});
-      {chart_js}
-      function drawChart(name, dRaw) {{
-        const data = new google.visualization.DataTable();
-        data.addColumn('number', 'T'); data.addColumn('number', 'RSI');
-        dRaw.forEach((v, i) => data.addRow([i, v]));
-        new google.visualization.LineChart(document.getElementById('chart_'+name)).draw(data, {{
-          backgroundColor: 'transparent', colors: ['#00ff88'], legend: 'none',
-          hAxis: {{textPosition: 'none', gridlines: {{color: 'transparent'}}}},
-          vAxis: {{textPosition: 'none', gridlines: {{color: '#333'}}, minValue: 0, maxValue: 100}},
-          chartArea: {{width: '100%', height: '80%'}}
-        }});
-      }}
-    </script>
+    <title>EURJPY Master Pro</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body><div class="container"><h1>EUR/JPY Master</h1><p class="update-time">{now}</p>{html_cards}</div></body></html>""")
+<body>
+    <div class="container">
+        <header>
+            <h1>EUR/JPY Master Pro</h1>
+            <p class="time">{now} 更新</p>
+        </header>
+        {resonation}
+        {html_cards}
+    </div>
+</body>
+</html>""")
 
 if __name__ == "__main__": main()
