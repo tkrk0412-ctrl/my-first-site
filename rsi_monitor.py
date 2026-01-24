@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
+plt.switch_backend('Agg')
 from datetime import datetime, timezone, timedelta
 import numpy as np
 
