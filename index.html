@@ -1,53 +1,51 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EURJPY Master</title><link rel="stylesheet" href="style.css">
-    <script src="https://www.gstatic.com/charts/loader.js"></script>
-    <script>
-      google.charts.load('current', {packages: ['corechart']});
-      google.charts.setOnLoadCallback(() => {
-        drawChart('M15', data_M15);drawChart('H1', data_H1);drawChart('H4', data_H4);
-      });
-      const data_M15 = [34.772368724199126, 37.783544134618495, 27.78966090573394, 22.71976669550969, 21.132205131280884, 19.464773234687172, 20.016262972073164, 15.720230934341302, 17.309471413000537, 23.013110323829935, 21.193933790226126, 28.948900706998188, 27.65919343918847, 28.670384624474067, 29.48642017762245, 31.306985025892928, 30.062937630788525, 32.804116626392386, 32.07171284664781, 33.382440252292696, 32.678443644685416, 32.15667860355367, 37.278464314644076, 37.278464314644076];
-const data_H1 = [80.23861826772891, 74.67267413984105, 78.37238845702645, 70.95504684468027, 71.03912555985127, 71.15931074165677, 74.16324358098313, 77.71948947384942, 46.76125880952481, 40.619090838218305, 35.64232842519033, 42.679736603223475, 42.100362577363526, 45.38836388214391, 45.28087756713372, 51.085014774820344, 51.59036967540884, 39.89261301738061, 25.35437103458368, 23.104643299839566, 22.953461082200718, 24.72255425091315, 24.184305623859032, 27.187668225330924];
-const data_H4 = [53.443436497987776, 69.20366346698883, 69.249757181547, 70.23025004089797, 72.4456742251645, 73.4538774817585, 67.01130381699947, 61.25193913066055, 59.774721782106944, 62.513747272610345, 62.93941874044055, 57.726543229230224, 63.754548901289425, 67.66577936916312, 66.81250870037226, 70.31197253400909, 72.36512650091755, 75.15167631804638, 74.75344079951272, 63.46984565277538, 57.181235612354214, 61.687050937429525, 36.99247750163545, 38.497772362038226];
-
-      function drawChart(name, dRaw) {
-        const data = new google.visualization.DataTable();
-        data.addColumn('number', 'T'); data.addColumn('number', 'RSI');
-        dRaw.forEach((v, i) => data.addRow([i, v]));
-        new google.visualization.LineChart(document.getElementById('chart_'+name)).draw(data, {
-          backgroundColor: 'transparent', colors: ['#00ff88'], legend: 'none',
-          hAxis: {textPosition: 'none', gridlines: {color: 'transparent'}},
-          vAxis: {textPosition: 'none', gridlines: {color: '#333'}, minValue: 0, maxValue: 100},
-          chartArea: {width: '100%', height: '80%'}
-        });
-      }
-    </script>
+    <title>EURJPY Master Pro</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body><div class="container"><h1>EUR/JPY Master</h1><p class="update-time">2026-01-25 01:11:56 JST</p>
+<body>
+    <div class="container">
+        <header>
+            <h1>EUR/JPY Master Pro</h1>
+            <p class="time">2026/01/25 01:28 更新</p>
+        </header>
+        
+        
         <div class="card">
-            <h2>EUR/JPY (M15)</h2>
-            <p class="price-val">184.229</p>
-            <p class="bb-info">Lower: 183.901 / Upper: 184.465</p>
-            <p class="rsi-val">RSI: 37.28</p>
-            <p class="signal-none">💎 待機</p>
-            <div id="chart_M15" style="width: 100%; height: 80px;"></div>
+            <div class="card-header">
+                <span class="label">M15足</span>
+                <span class="price">184.229</span>
+            </div>
+            <div class="indicators">
+                <span>RSI: 37.3</span>
+                <span class="signal-none">静観</span>
+            </div>
+            <img src="chart_M15.png?v=1769272089.294314" class="chart-img">
         </div>
         <div class="card">
-            <h2>EUR/JPY (H1)</h2>
-            <p class="price-val">184.229</p>
-            <p class="bb-info">Lower: 183.691 / Upper: 187.067</p>
-            <p class="rsi-val">RSI: 27.19</p>
-            <p class="signal-buy-soft">🚀 買い検討</p>
-            <div id="chart_H1" style="width: 100%; height: 80px;"></div>
+            <div class="card-header">
+                <span class="label">H1足</span>
+                <span class="price">184.229</span>
+            </div>
+            <div class="indicators">
+                <span>RSI: 27.2</span>
+                <span class="signal-buy">買い狙い</span>
+            </div>
+            <img src="chart_H1.png?v=1769272089.83566" class="chart-img">
         </div>
         <div class="card">
-            <h2>EUR/JPY (H4)</h2>
-            <p class="price-val">184.229</p>
-            <p class="bb-info">Lower: 184.246 / Upper: 186.573</p>
-            <p class="rsi-val">RSI: 38.50</p>
-            <p class="signal-none">💎 待機</p>
-            <div id="chart_H4" style="width: 100%; height: 80px;"></div>
-        </div></div></body></html>
+            <div class="card-header">
+                <span class="label">H4足</span>
+                <span class="price">184.229</span>
+            </div>
+            <div class="indicators">
+                <span>RSI: 38.5</span>
+                <span class="signal-none">静観</span>
+            </div>
+            <img src="chart_H4.png?v=1769272090.423456" class="chart-img">
+        </div>
+    </div>
+</body>
+</html>
