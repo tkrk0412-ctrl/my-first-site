@@ -1,68 +1,53 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Monitor</title>
-    <link rel="stylesheet" href="style.css">
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EURJPY Master</title><link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
       google.charts.load('current', {packages: ['corechart']});
-      google.charts.setOnLoadCallback(drawCharts);
-      const data_EURJPY = [72.48768270498914, 72.92788998592937, 74.64894358279342, 77.42155965301093, 78.01728432016552, 77.09044899663095, 80.23861826772891, 74.67267413984105, 78.37238845702645, 70.95504684468027, 71.03912555985127, 71.15931074165677, 74.16324358098313, 77.71948947384942, 46.76125880952481, 40.619090838218305, 35.64232842519033, 42.679736603223475, 42.100362577363526, 45.38836388214391, 45.28087756713372, 51.085014774820344, 51.59036967540884, 50.467369301457026];
-const data_USDJPY = [43.913372395986784, 44.09593475764801, 48.51927424075319, 49.57177796899117, 47.523024364476804, 47.868804129499516, 52.881233285483816, 53.792815583800916, 58.81145377228492, 56.01207812630226, 58.03455073600642, 52.703516430952206, 56.222090397926166, 65.25181516553147, 45.51244152052472, 39.31578312371274, 36.473942241434436, 43.006405549350994, 41.3888259511533, 42.37908160554737, 46.19024189501779, 45.535460894799165, 41.609205177356856, 41.552495388855704];
-const data_BTCJPY = [47.267654594609134, 45.08225274993213, 51.81301047877729, 47.72206805969475, 45.465333141548676, 46.6380497685908, 49.807160922356886, 50.57265365693574, 55.23842191206111, 51.438980881570544, 54.48953109033905, 55.18669205937804, 49.97226872988009, 50.58723066692728, 46.93487859341696, 41.67892958258019, 37.729750132143, 40.66011876369649, 42.65277129002658, 44.85258687107115, 46.3250157890273, 42.0239207100596, 50.4955585538872, 51.99754402857205];
+      google.charts.setOnLoadCallback(() => {
+        drawChart('M15', data_M15);drawChart('H1', data_H1);drawChart('H4', data_H4);
+      });
+      const data_M15 = [34.772368724199126, 37.783544134618495, 27.78966090573394, 22.71976669550969, 21.132205131280884, 19.464773234687172, 20.016262972073164, 15.720230934341302, 17.309471413000537, 23.013110323829935, 21.193933790226126, 28.948900706998188, 27.65919343918847, 28.670384624474067, 29.48642017762245, 31.306985025892928, 30.062937630788525, 32.804116626392386, 32.07171284664781, 33.382440252292696, 32.678443644685416, 32.15667860355367, 37.278464314644076, 37.278464314644076];
+const data_H1 = [80.23861826772891, 74.67267413984105, 78.37238845702645, 70.95504684468027, 71.03912555985127, 71.15931074165677, 74.16324358098313, 77.71948947384942, 46.76125880952481, 40.619090838218305, 35.64232842519033, 42.679736603223475, 42.100362577363526, 45.38836388214391, 45.28087756713372, 51.085014774820344, 51.59036967540884, 39.89261301738061, 25.35437103458368, 23.104643299839566, 22.953461082200718, 24.72255425091315, 24.184305623859032, 27.187668225330924];
+const data_H4 = [53.443436497987776, 69.20366346698883, 69.249757181547, 70.23025004089797, 72.4456742251645, 73.4538774817585, 67.01130381699947, 61.25193913066055, 59.774721782106944, 62.513747272610345, 62.93941874044055, 57.726543229230224, 63.754548901289425, 67.66577936916312, 66.81250870037226, 70.31197253400909, 72.36512650091755, 75.15167631804638, 74.75344079951272, 63.46984565277538, 57.181235612354214, 61.687050937429525, 36.99247750163545, 38.497772362038226];
 
-      function drawCharts() {
-        drawSheet('EURJPY', data_EURJPY);drawSheet('USDJPY', data_USDJPY);drawSheet('BTCJPY', data_BTCJPY);
-      }
-      function drawSheet(name, dataRaw) {
+      function drawChart(name, dRaw) {
         const data = new google.visualization.DataTable();
-        data.addColumn('number', 'Time');
-        data.addColumn('number', 'RSI');
-        dataRaw.forEach((v, i) => data.addRow([i, v]));
-        const options = {
-          backgroundColor: 'transparent',
-          colors: ['#00ff88'],
-          legend: 'none',
-          hAxis: { textPosition: 'none', gridlines: {color: 'transparent'} },
-          vAxis: { textPosition: 'none', gridlines: {color: '#333'}, minValue: 0, maxValue: 100 },
+        data.addColumn('number', 'T'); data.addColumn('number', 'RSI');
+        dRaw.forEach((v, i) => data.addRow([i, v]));
+        new google.visualization.LineChart(document.getElementById('chart_'+name)).draw(data, {
+          backgroundColor: 'transparent', colors: ['#00ff88'], legend: 'none',
+          hAxis: {textPosition: 'none', gridlines: {color: 'transparent'}},
+          vAxis: {textPosition: 'none', gridlines: {color: '#333'}, minValue: 0, maxValue: 100},
           chartArea: {width: '100%', height: '80%'}
-        };
-        const chart = new google.visualization.LineChart(document.getElementById('chart_' + name));
-        chart.draw(data, options);
+        });
       }
     </script>
 </head>
-<body>
-    <div class="container">
-        <h1>Market Monitor Pro</h1>
-        <p class="update-time">最終更新: 2026-01-24 01:02:02 JST</p>
-        
+<body><div class="container"><h1>EUR/JPY Master</h1><p class="update-time">2026-01-25 01:11:56 JST</p>
         <div class="card">
-            <h2>EURJPY</h2>
-            <p class="price-val">185.873</p>
-            <p class="rsi-val">RSI: 50.47</p>
+            <h2>EUR/JPY (M15)</h2>
+            <p class="price-val">184.229</p>
+            <p class="bb-info">Lower: 183.901 / Upper: 184.465</p>
+            <p class="rsi-val">RSI: 37.28</p>
             <p class="signal-none">💎 待機</p>
-            <div id="chart_EURJPY" style="width: 100%; height: 100px;"></div>
+            <div id="chart_M15" style="width: 100%; height: 80px;"></div>
         </div>
-        
         <div class="card">
-            <h2>USDJPY</h2>
-            <p class="price-val">158.105</p>
-            <p class="rsi-val">RSI: 41.55</p>
-            <p class="signal-none">💎 待機</p>
-            <div id="chart_USDJPY" style="width: 100%; height: 100px;"></div>
+            <h2>EUR/JPY (H1)</h2>
+            <p class="price-val">184.229</p>
+            <p class="bb-info">Lower: 183.691 / Upper: 187.067</p>
+            <p class="rsi-val">RSI: 27.19</p>
+            <p class="signal-buy-soft">🚀 買い検討</p>
+            <div id="chart_H1" style="width: 100%; height: 80px;"></div>
         </div>
-        
         <div class="card">
-            <h2>BTC-JPY</h2>
-            <p class="price-val">14172725.000</p>
-            <p class="rsi-val">RSI: 52.00</p>
+            <h2>EUR/JPY (H4)</h2>
+            <p class="price-val">184.229</p>
+            <p class="bb-info">Lower: 184.246 / Upper: 186.573</p>
+            <p class="rsi-val">RSI: 38.50</p>
             <p class="signal-none">💎 待機</p>
-            <div id="chart_BTCJPY" style="width: 100%; height: 100px;"></div>
-        </div>
-        
-    </div>
-</body>
-</html>
+            <div id="chart_H4" style="width: 100%; height: 80px;"></div>
+        </div></div></body></html>
