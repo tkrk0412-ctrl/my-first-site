@@ -12,34 +12,62 @@ HISTORY_FILE = "history.json"
 
 def calculate_indicators(df):
     close = df["Close"]
+    # RSI
     delta = close.diff()
     gain = delta.clip(lower=0.0).ewm(alpha=1/14, adjust=False).mean()
     loss = (-delta).clip(lower=0.0).ewm(alpha=1/14, adjust=False).mean()
     df["RSI"] = 100 - (100 / (1 + (gain / loss.replace(0, 1e-9))))
+    # Bollinger Bands
     df["MA20"] = close.rolling(window=20).mean()
     df["STD"] = close.rolling(window=20).std()
     df["Upper"] = df["MA20"] + (df["STD"] * 2)
     df["Lower"] = df["MA20"] - (df["STD"] * 2)
+    # %B (Bollinger Band Position)
+    df["PctB"] = (close - df["Lower"]) / (df["Upper"] - df["Lower"])
+    # Volatility (ATR simple)
+    df["Vol"] = df["High"].rolling(10).max() - df["Low"].rolling(10).min()
     return df
 
-def get_signal_data(df):
+def get_comprehensive_judgment(df):
     last = df.iloc[-1]
-    p, r, l, u = float(last["Close"]), float(last["RSI"]), float(last["Lower"]), float(last["Upper"])
-    if r <= 30 and p <= l: return "🔥 激アツ買い", "sig-buy"
-    if r >= 70 and p >= u: return "🔥 激アツ売り", "sig-sell"
-    if r <= 35: return "買い狙い", "sig-soft-buy"
-    if r >= 65: return "売り狙い", "sig-soft-sell"
-    return "静観", "sig-none"
+    prev = df.iloc[-2]
+    p_last, p_prev = float(last["Close"]), float(prev["Close"])
+    rsi = float(last["RSI"])
+    pb = float(last["PctB"]) * 100
+    
+    # 1. ボリバン位置
+    bb_pos = "上限" if pb > 90 else "下限" if pb < 10 else "中央"
+    
+    # 2. 勢い (直近10本の値幅比較)
+    vol_now = float(last["Vol"])
+    vol_avg = float(df["Vol"].mean())
+    momentum = "🔥 激しい" if vol_now > vol_avg * 1.5 else "🧊 静か"
+    
+    # 3. 形状 (安値/高値切り上げ)
+    low_now, low_prev = float(last["Low"]), float(prev["Low"])
+    high_now, high_prev = float(last["High"]), float(prev["High"])
+    shape = "↗️ 切り上げ" if low_now > low_prev else "↘️ 切り下げ" if high_now < high_prev else "平坦"
+
+    # 総合判断
+    if rsi < 35 and pb < 20:
+        judg, color = "💎 絶好の買い場", "sig-buy"
+    elif rsi > 65 and pb > 80:
+        judg, color = "⚠️ 売り警戒領域", "sig-sell"
+    elif rsi < 45 and shape == "↗️ 切り上げ":
+        judg, color = "🏹 押し目買い狙い", "sig-soft-buy"
+    elif rsi > 55 and shape == "↘️ 切り下げ":
+        judg, color = "🛡️ 戻り売り狙い", "sig-soft-sell"
+    else:
+        judg, color = "🧘 待機（静観）", "sig-none"
+        
+    return judg, color, f"BB位置:{pb:.0f}%({bb_pos}) / 勢い:{momentum} / 形状:{shape}"
 
 def main():
     now_jst = datetime.now(tz=JST)
     now_str = now_jst.strftime("%H:%M")
-    
-    # 履歴の読み込み
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r") as f: history = json.load(f)
-    else:
-        history = {}
+    else: history = {}
 
     html_cards = ""
     new_history = {}
@@ -48,42 +76,30 @@ def main():
         df = yf.download(SYMBOL, interval=interval, period=period, progress=False)
         if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
         df = calculate_indicators(df)
-        sig_text, sig_class = get_signal_data(df)
-        last_rsi = float(df.iloc[-1]["RSI"])
-        prev_rsi = float(df.iloc[-2]["RSI"])
-        trend = "↗️" if last_rsi > prev_rsi else "↘️"
+        sig_text, sig_class, detail_text = get_comprehensive_judgment(df)
         
-        # 履歴処理
         past_logs = history.get(label, [])
         if not past_logs or past_logs[-1]["sig"] != sig_text:
             past_logs.append({"sig": sig_text, "time": now_str})
-        
-        # 直近3つに絞る
         display_logs = past_logs[-3:]
-        new_history[label] = past_logs[-10:] # 保存用は10件
-
-        # 履歴表示の組み立て
-        history_html = " ↗️ ".join([f"{h['sig']}({h['time']})" for h in display_logs])
+        new_history[label] = past_logs[-10:]
+        history_html = " ➔ ".join([f"{h['sig']}" for h in display_logs])
 
         html_cards += f"""
         <div class="card">
             <div class="card-header"><span class="label">{label}</span><span class="price">{float(df.iloc[-1]["Close"]):.3f}</span></div>
             <div class="indicators">
                 <span class="signal {sig_class}">{sig_text}</span>
-                <span style="font-size:0.8em; color:#8b949e;">({now_str}〜)</span>
             </div>
-            <div style="font-size:0.75em; color:#6e7681; margin:8px 0; padding:5px; background:#0d1117; border-radius:4px;">
-                🕒 履歴: {history_html} ↗️ 現時刻
-            </div>
-            <div class="reason" style="font-size:0.85em; color:#d1d5da; border-top:1px dashed #333; padding-top:5px;">
-                💡 根拠: RSI {last_rsi:.1f}({trend})。{"安値圏から反発中" if trend == "↗️" and last_rsi < 40 else "高値圏から反落中" if trend == "↘️" and last_rsi > 60 else "レンジ内推移"}
+            <div style="font-size:0.75em; color:#8b949e; margin-bottom:8px;">🕒 履歴: {history_html}</div>
+            <div class="reason" style="font-size:0.85em; color:#d1d5da; border-top:1px solid #333; padding-top:8px;">
+                {detail_text}<br>
+                <strong style="color:#58a6ff;">📊 RSI: {float(df.iloc[-1]["RSI"]):.1f}</strong>
             </div>
         </div>"""
 
-    # 履歴保存
     with open(HISTORY_FILE, "w") as f: json.dump(new_history, f)
-
     with open("index.html", "w", encoding="utf-8") as f:
-        f.write(f"<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><link rel='stylesheet' href='style.css'></head><body><div class='container'><header><h1>EUR/JPY Ultimate</h1><p>{now_jst.strftime('%Y/%m/%d %H:%M')} Update</p></header>{html_cards}</div></body></html>")
+        f.write(f"<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><link rel='stylesheet' href='style.css'><style>.sig-buy{{background:#1f6feb}} .sig-sell{{background:#da3633}} .sig-soft-buy{{background:#238636}} .sig-soft-sell{{background:#9e6a03}} .sig-none{{background:#30363d}}</style></head><body><div class='container'><header><h1>EUR/JPY Strategy Monitor</h1><p>{now_jst.strftime('%Y/%m/%d %H:%M')} Update</p></header>{html_cards}</div></body></html>")
 
 if __name__ == "__main__": main()
